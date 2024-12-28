@@ -12,12 +12,16 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
+
+  const { username, email, password } = req.body
   const user = new User({
-    name: req.body.name,
-    description: req.body.description,
+    username: username,
+    email: email,
+    password: password
+
   });
 
-
+  console.log(user);
   try {
     const newUser = await user.save();
     res.status(201).json(newUser);
