@@ -1,8 +1,10 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const User = require('../models/Users');
+const User = require("../models/Users");
+const bcrypt = require("bcrypt");
+const userSchema = require("../validation/users");
 
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
@@ -11,21 +13,36 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post("/sign-in", async (req, res) => {
 
-  const { username, email, password } = req.body
-  const user = new User({
-    username: username,
-    email: email,
-    password: password
+  const { username, email, password } = req.body;
+  const { error } = userSchema.validate(
+    { username, email, password },
+    { abortEarly: false }
+  );
+  if (error) {
+    return res.status(400).json({
+      message: "Validation échouée.",
+      errors: error.details.map((err) => err.message),
+    });
+  }
 
-  });
-
-  console.log(user);
   try {
-    const newUser = await user.save();
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = new User({
+      username: username,
+      email: email,
+      password: hashedPassword,
+    });
+
+    const newUser = user
+      .save()
+      .then(() => console.log("User saved successfully"))
+      .catch((err) => console.error("Validation failed:", err.message));
     res.status(201).json(newUser);
   } catch (error) {
+    console.log(error.message);
     res.status(400).json({ message: error.message });
   }
 });
